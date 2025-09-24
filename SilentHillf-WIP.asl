@@ -10,7 +10,7 @@ startup
     vars.Helper.AlertLoadless();
     vars.Uhara.EnableDebug();
 
-    settings.Add("CapsuleBox_True", true, "test");
+    settings.Add("CapsuleBox_1", true, "test");
 }
 
 init
@@ -21,9 +21,9 @@ init
     IntPtr gSyncLoad = vars.Helper.ScanRel(21, "33 C0 0F 57 C0 F2 0F 11 05");
 
     vars.CompletedSplits = new HashSet<string>();
-    vars.SplitsToComplete = new HashSet<string>();
     vars.GEngine = gEngine;
-    vars.KeyItem = new Dictionary<ulong, bool>();
+    vars.KeyItem = new Dictionary<ulong, int>();
+    vars.Omamori = new Dictionary<ulong, int>();
     vars.FNameCache = new Dictionary<ulong, string>();
 
     if (gWorld == IntPtr.Zero || gEngine == IntPtr.Zero || fNames == IntPtr.Zero)
@@ -68,7 +68,8 @@ init
     
     vars.Helper["CutsceneName"] = vars.Helper.Make<uint>(WBP_Cutscene_C, 0x460);
     vars.Helper["CutsceneName"].FailAction = MemoryWatcher.ReadFailAction.SetZeroOrNull;
-
+    
+    vars.Helper["ProgressTag"] = vars.Helper.Make<ulong>(gWorld, 0x160, 0x328, 0x250);
     vars.Helper["ViewedCutscenes"] = vars.Helper.Make<ulong>(gEngine, 0x10A8, 0x38, 0x0, 0x30, 0x298, 0x598);
     // vars.Helper["InventoryComponent"] = vars.Helper.Make<ulong>(gEngine, 0x10A8, 0x38, 0x0, 0x30, 0x298, 0x408);
     vars.Helper["LastAddedType"] = vars.Helper.Make<ulong>(gEngine, 0x10A8, 0x38, 0x0, 0x30, 0x298, 0x408, 0xD0);
@@ -139,49 +140,71 @@ update
 
 split
 {
-    bool shouldSplit = false;
-
 	// Item splits
 	if(vars.FNameToShortString2(current.AcknowledgedPawn) == "BP_Pl_Hina_C_"){ 
-		for (int i = 0; i < 87; i++)
+		for (int i = 0; i < 66; i++)
 		{
             string setting = "";
 
 			ulong item = vars.Helper.Read<ulong>(vars.GEngine, 0x10A8, 0x38, 0x0, 0x30, 0x298, 0x408, 0x350, 0x0 + (i * 0x8));
-			bool amount = vars.Helper.Read<bool>(vars.GEngine, 0x10A8, 0x38, 0x0, 0x30, 0x298, 0x408, 0x330, 0x0 + (i * 0x1));
-            bool oldAmount = false;
-            
-            if(current.CutsceneName != old.CutsceneName)
-            {
-                vars.Log("ID= " + vars.FNameToShortString(item) + "," + " complete= " + amount);
-            }
+			int collected = vars.Helper.Read<int>(vars.GEngine, 0x10A8, 0x38, 0x0, 0x30, 0x298, 0x408, 0x330, 0x0 + (i * 0x1));
+            int oldcollected = vars.KeyItem.ContainsKey(item) ? vars.KeyItem[item] : -1;
 
-			if (amount == true)
+            vars.KeyItem[item] = collected;
+
+			if (collected == 1 && oldcollected == 0)
             {
-                if (!vars.KeyItem.ContainsKey(item))
+                if (!vars.FNameCache.ContainsKey(item))
                 {
-                    vars.KeyItem[item] = vars.FNameToString(item);
+                    vars.FNameCache[item] = vars.FNameToString(item);
                 }
-                setting = vars.FNameToShortString[item] + "_" + amount;
+                setting = vars.FNameCache[item] + "_" + collected;
             }
 
             if (!string.IsNullOrEmpty(setting) && settings.ContainsKey(setting) && settings[setting] && !vars.CompletedSplits.Contains(setting))
             {
+                return true;
                 vars.CompletedSplits.Add(setting);
-                shouldSplit = true;
                 vars.Log("Split Complete: " + setting);
             }
 			
 			// Debug. Comment out before release.
-			//if (!string.IsNullOrEmpty(setting))
-			//vars.Log(setting);
-		
-			if (settings.ContainsKey(setting) && settings[setting] && vars.completedSplits.Add(setting) && vars.splitstoComplete.Contains(setting))
+			// if (!string.IsNullOrEmpty(setting))
+			// vars.Log(setting);
+		}
+	}
+
+    // Omamori splits
+	if(vars.FNameToShortString2(current.AcknowledgedPawn) == "BP_Pl_Hina_C_"){ 
+		for (int i = 0; i < 41; i++)
+		{
+            string setting = "";
+
+			ulong omamori = vars.Helper.Read<ulong>(vars.GEngine, 0x10A8, 0x38, 0x0, 0x30, 0x298, 0x408, 0x238, 0x0 + (i * 0x8));
+			int collected = vars.Helper.Read<int>(vars.GEngine, 0x10A8, 0x38, 0x0, 0x30, 0x298, 0x408, 0x218, 0x0 + (i * 0x1));
+            int oldcollected = vars.Omamori.ContainsKey(omamori) ? vars.Omamori[omamori] : -1;
+
+            vars.Omamori[omamori] = collected;
+
+			if (collected == 1 && oldcollected == 0)
             {
-				return true;
-				vars.SplitsToComplete.Clear();
+                if (!vars.FNameCache.ContainsKey(omamori))
+                {
+                    vars.FNameCache[omamori] = vars.FNameToString(omamori);
+                }
+                setting = vars.FNameCache[omamori] + "_" + collected;
+            }
+
+            if (!string.IsNullOrEmpty(setting) && settings.ContainsKey(setting) && settings[setting] && !vars.CompletedSplits.Contains(setting))
+            {
+                return true;
+                vars.CompletedSplits.Add(setting);
                 vars.Log("Split Complete: " + setting);
-			}
+            }
+			
+			// Debug. Comment out before release.
+			// if (!string.IsNullOrEmpty(setting))
+			// vars.Log(setting);
 		}
 	}
 
@@ -196,15 +219,15 @@ split
     //         return true;
     //     }
     // }
-
-    if(shouldSplit)
-    {
-        return true;
-    }
 }
 
 isLoading
 {
     return current.World == "NoceEntry" || current.bWaitForRevive || !current.IsGameInitialized || current.isLoading 
     || !string.IsNullOrEmpty(current.Cutscene) || vars.FNameToShortString2(current.LocalPlayer) != "BP_Pl_Hina_PlayerController_C_";
+}
+
+exit
+{
+    timer.IsGameTimePaused = true;
 }
