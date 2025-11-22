@@ -9,8 +9,6 @@ startup
     vars.Helper.GameName = "Silent Hill f";
     vars.Helper.AlertLoadless();
     vars.Uhara.EnableDebug();
-
-    vars.SplitsToComplete = new List<string>();
 }
 
 init
@@ -80,9 +78,6 @@ init
     current.World = "";
     current.Progress = "";
     current.Cutscene = "";
-    current.CutsceneName = 0;
-    vars.KeyItem = new Dictionary<ulong, int>();
-    vars.FNameCache = new Dictionary<ulong, string>();
 }
 
 start
@@ -105,14 +100,14 @@ update
     if (old.World != current.World) vars.Log("World: " + current.World);
 
     var progress = vars.FNameToString(current.ProgressTag);
-	if (!string.IsNullOrEmpty(progress) && world == "NoceWorld") current.Progress = progress;
+	if (!string.IsNullOrEmpty(progress)) current.Progress = progress;
     if (old.Progress != current.Progress) vars.Log("Progress: " + current.Progress);
 
     if (current.CutsceneName != old.CutsceneName)
     {
         if (current.CutsceneName != 0)
         {
-            string cutscene = vars.FNameToString(current.CutsceneName);
+            string cutscene = vars.Events.FNameToString(current.CutsceneName);
             if (!string.IsNullOrEmpty(cutscene)) current.Cutscene = cutscene;
         }
         else current.Cutscene = "";
@@ -123,67 +118,51 @@ update
 
 split
 {
-    // Item splits
-    if(vars.FNameToShortString2(current.AcknowledgedPawn) == "BP_Pl_Hina_C_"){ 
-        for (int i = 0; i < 87; i++)
-        {
-            string setting = "";
+    // const string ItemFormat = "[{0}] {1} ({2})";
+	// string setting = "";
+	
+	// Item splits.
+	// if(vars.FNameToShortString2(current.AcknowledgedPawn) == "BP_Pl_Hina_C_"){ 
+	// 	for (int i = 0; i < current.ItemCount; i++)
+	// 	{
 
-            ulong item = vars.Helper.Read<ulong>(vars.GEngine, 0x10A8, 0x38, 0x0, 0x30, 0x298, 0x408, 0x350, 0x0 + (i * 0x8));
-            int collected = vars.Helper.Read<int>(vars.GEngine, 0x10A8, 0x38, 0x0, 0x30, 0x298, 0x408, 0x330, 0x0 + (i * 0x1));
-            int oldcollected = vars.KeyItem.ContainsKey(item) ? vars.KeyItem[item] : -1;
-            
-            // if(current.CutsceneName != old.CutsceneName)
-            // {
-            //     vars.Log("ID= " + vars.FNameToShortString(item) + "," + " complete= " + collected);
-            // }
+	// 		ulong item = vars.Helper.Read<ulong>(current.Items + 0xC * i);
+	// 		int amount = vars.Helper.Read<int>(current.Items + 0x8 + 0xC * i);
 
-            vars.KeyItem[item] = collected;
+	// 		int oldAmount;
+	// 		if (vars.Inventory.TryGetValue(item, out oldAmount))
+	// 		{
+	// 		}
+	// 		else
+	// 		{
+	// 			setting = string.Format(ItemFormat, '+', vars.FNameToShortString(item), '!');
+	// 			vars.splitstoComplete.Add(setting);
+	// 		}
 
-            if (collected == 1 && oldcollected == 0)
-            {
-                if (!vars.FNameCache.ContainsKey(item))
-                {
-                    vars.FNameCache[item] = vars.FNameToString(item);
-                }
-                setting = vars.FNameCache[item] + "_" + collected;
-            }
+	// 		vars.Inventory[item] = amount;
+			
+	// 		// Debug. Comment out before release.
+	// 		//if (!string.IsNullOrEmpty(setting))
+	// 		//vars.Log(setting);
+		
+	// 		if (settings.ContainsKey(setting) && settings[setting] && vars.completedSplits.Add(setting) && vars.splitstoComplete.Contains(setting)){
+	// 			return true;
+	// 			vars.splitstoComplete.Clear();
+	// 		}
+	// 	}
+	// }
 
-            // if (!string.IsNullOrEmpty(setting) && settings.ContainsKey(setting) && settings[setting] && !vars.CompletedSplits.Contains(setting))
-            // {
-            //     return true;
-            //     vars.CompletedSplits.Add(setting);
-            //     vars.Log("Split Complete: " + setting);
-            // }
-            
-            // Debug. Comment out before release.
-            if (!string.IsNullOrEmpty(setting)) vars.Log(setting);
-        }
-    }
-
-    if(!string.IsNullOrEmpty(current.Cutscene) && string.IsNullOrEmpty(old.Cutscene))
-    {
-        string cutscenesetting = current.Cutscene;
-        vars.SplitsToComplete.Add(current.Cutscene);
+    // if(!string.IsNullOrEmpty(current.Cutscene) && string.IsNullOrEmpty(old.Cutscene))
+    // {
+    //     string setting = current.Cutscene;
+    //     vars.SplitsToComplete.Add(current.Cutscene);
         
-        if (settings.ContainsKey(cutscenesetting) && settings[cutscenesetting] && vars.CompletedSplits.Add(cutscenesetting) && vars.SplitsToComplete.Contains(cutscenesetting))
-        {
-            vars.SplitsToComplete.Clear();
-            // return true;
-        }
-    }
-
-    if(string.IsNullOrEmpty(old.Progress) && string.IsNullOrEmpty(current.Progress) && current.World == "NoceWorld")
-    {
-        string setting = current.Progress;
-        vars.SplitsToComplete.Add(current.Progress);
-        
-        if (settings.ContainsKey(setting) && settings[setting] && vars.CompletedSplits.Add(setting) && vars.SplitsToComplete.Contains(setting))
-        {
-            vars.SplitsToComplete.Clear();
-            // return true;
-        }
-    }
+    //     if (settings.ContainsKey(setting) && settings[setting] && vars.CompletedSplits.Add(setting) && vars.SplitsToComplete.Contains(setting))
+    //     {
+    //         vars.SplitsToComplete.Clear();
+    //         return true;
+    //     }
+    // }
 }
 
 isLoading

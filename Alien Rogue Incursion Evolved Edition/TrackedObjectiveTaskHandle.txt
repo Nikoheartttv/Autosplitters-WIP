@@ -1,0 +1,7 @@
+3 - Check your datapad and insert intel.
+4 - Run Engine Diagnostics at Terminal
+5 - Manually bypass O2 tanks.
+6 - Equip and load the M41 Prototype Rifle
+7 - Exit the Ship and begin the search for Carver.
+0
+9 - Exit the Ship and begin the search for Carver.

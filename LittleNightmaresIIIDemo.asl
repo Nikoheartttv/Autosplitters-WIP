@@ -57,7 +57,6 @@ update
 
     if (old.World != current.World)
         vars.Log("World: " + current.World);
-
 }
 
 start

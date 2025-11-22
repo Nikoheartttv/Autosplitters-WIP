@@ -5,12 +5,9 @@ startup
 {
     Assembly.Load(File.ReadAllBytes("Components/asl-help")).CreateInstance("Basic");
     Assembly.Load(File.ReadAllBytes("Components/uhara9")).CreateInstance("Main");
-    // vars.Helper.Settings.CreateFromXml("Components/SilentHillf.Settings.xml");
     vars.Helper.GameName = "Silent Hill f";
     vars.Helper.AlertLoadless();
     vars.Uhara.EnableDebug();
-
-    vars.SplitsToComplete = new List<string>();
 }
 
 init
@@ -73,16 +70,11 @@ init
     vars.Helper["GWorldName"] = vars.Helper.Make<ulong>(gWorld, 0x18);
     vars.Helper["IsGameInitialized"] = vars.Helper.Make<bool>(gWorld, 0x158, 0x37A);
     vars.Helper["bWaitForRevive"] = vars.Helper.Make<bool>(gWorld, 0x158, 0x3B1);
-    // GWorld -> GameState -> GameProgress -> ExactProgressTag
-    vars.Helper["ProgressTag"] = vars.Helper.Make<ulong>(gWorld, 0x160, 0x328, 0x250);
 
-    vars.CutsceneIndex = -1;
     current.World = "";
     current.Progress = "";
     current.Cutscene = "";
     current.CutsceneName = 0;
-    vars.KeyItem = new Dictionary<ulong, int>();
-    vars.FNameCache = new Dictionary<ulong, string>();
 }
 
 start
@@ -104,10 +96,6 @@ update
 	if (!string.IsNullOrEmpty(world) && world != "None") current.World = world;
     if (old.World != current.World) vars.Log("World: " + current.World);
 
-    var progress = vars.FNameToString(current.ProgressTag);
-	if (!string.IsNullOrEmpty(progress) && world == "NoceWorld") current.Progress = progress;
-    if (old.Progress != current.Progress) vars.Log("Progress: " + current.Progress);
-
     if (current.CutsceneName != old.CutsceneName)
     {
         if (current.CutsceneName != 0)
@@ -116,73 +104,6 @@ update
             if (!string.IsNullOrEmpty(cutscene)) current.Cutscene = cutscene;
         }
         else current.Cutscene = "";
-    }
-
-    if (old.Cutscene != current.Cutscene) vars.Log("Cutscene: " + current.Cutscene);
-}
-
-split
-{
-    // Item splits
-    if(vars.FNameToShortString2(current.AcknowledgedPawn) == "BP_Pl_Hina_C_"){ 
-        for (int i = 0; i < 87; i++)
-        {
-            string setting = "";
-
-            ulong item = vars.Helper.Read<ulong>(vars.GEngine, 0x10A8, 0x38, 0x0, 0x30, 0x298, 0x408, 0x350, 0x0 + (i * 0x8));
-            int collected = vars.Helper.Read<int>(vars.GEngine, 0x10A8, 0x38, 0x0, 0x30, 0x298, 0x408, 0x330, 0x0 + (i * 0x1));
-            int oldcollected = vars.KeyItem.ContainsKey(item) ? vars.KeyItem[item] : -1;
-            
-            // if(current.CutsceneName != old.CutsceneName)
-            // {
-            //     vars.Log("ID= " + vars.FNameToShortString(item) + "," + " complete= " + collected);
-            // }
-
-            vars.KeyItem[item] = collected;
-
-            if (collected == 1 && oldcollected == 0)
-            {
-                if (!vars.FNameCache.ContainsKey(item))
-                {
-                    vars.FNameCache[item] = vars.FNameToString(item);
-                }
-                setting = vars.FNameCache[item] + "_" + collected;
-            }
-
-            // if (!string.IsNullOrEmpty(setting) && settings.ContainsKey(setting) && settings[setting] && !vars.CompletedSplits.Contains(setting))
-            // {
-            //     return true;
-            //     vars.CompletedSplits.Add(setting);
-            //     vars.Log("Split Complete: " + setting);
-            // }
-            
-            // Debug. Comment out before release.
-            if (!string.IsNullOrEmpty(setting)) vars.Log(setting);
-        }
-    }
-
-    if(!string.IsNullOrEmpty(current.Cutscene) && string.IsNullOrEmpty(old.Cutscene))
-    {
-        string cutscenesetting = current.Cutscene;
-        vars.SplitsToComplete.Add(current.Cutscene);
-        
-        if (settings.ContainsKey(cutscenesetting) && settings[cutscenesetting] && vars.CompletedSplits.Add(cutscenesetting) && vars.SplitsToComplete.Contains(cutscenesetting))
-        {
-            vars.SplitsToComplete.Clear();
-            // return true;
-        }
-    }
-
-    if(string.IsNullOrEmpty(old.Progress) && string.IsNullOrEmpty(current.Progress) && current.World == "NoceWorld")
-    {
-        string setting = current.Progress;
-        vars.SplitsToComplete.Add(current.Progress);
-        
-        if (settings.ContainsKey(setting) && settings[setting] && vars.CompletedSplits.Add(setting) && vars.SplitsToComplete.Contains(setting))
-        {
-            vars.SplitsToComplete.Clear();
-            // return true;
-        }
     }
 }
 
